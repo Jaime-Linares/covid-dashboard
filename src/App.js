@@ -1,14 +1,16 @@
-import "./App.css"
-import React, { useState, useEffect } from "react";
+import "./App.css";
 import Select from "react-select";
+import React, { useState, useEffect } from "react";
 import Card from "./SummaryCard";
+import { Line } from "react-chartjs-2";
+import Chart from "chart.js/auto";
 
 
 function App() {
   const locationList = [
     { value: "AB", label: "Alberta" },
     { value: "BC", label: "British Columbia" },
-    { value: "can", label: "Canada" },
+    { value: "canada", label: "Canada" },
     { value: "MB", label: "Manitoba" },
     { value: "NB", label: "New Brunswick" },
     { value: "NL", label: "Newfoundland and Labrador" },
@@ -21,75 +23,129 @@ function App() {
     { value: "SK", label: "Saskatchewan" },
     { value: "YT", label: "Yukon" },
   ];
-
-  const [activeLocation, setActiveLocation] = useState("can");
-  const [lastUpdated, setLastUpdated] = useState("");
-  const [summaryData, setSummaryData] = useState({});
-
-
   const baseUrl = "https://api.opencovid.ca";
-  const getVersion = async () => {
-    const res = await fetch(`${baseUrl}/version`);
-    const data = await res.json();
-    setLastUpdated(data.summary);
+  const timeseriesOptions = {
+    responsive: true,
+    normalized: true,
+    plugins: {
+      tooltip: {
+        enabled: false,
+      },
+    },
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        min: 0,
+      },
+    },
   };
+
+  const [activeLocation, setActiveLocation] = useState("canada");
+  const [lastUpdated, setlastUpdated] = useState("");
+  const [summaryData, setSummaryData] = useState({});
+  const [timeseriesData, setTimeseriesData] = useState({ datasets: [], });
+
 
   useEffect(() => {
     getVersion();
+    getSummaryData();
+    getTimeseriesData();
   }, [activeLocation]);
 
 
-  const getSummaryData = async () => {
-    //setSummaryData({});
-    let res;
-    if (activeLocation === "can") {
-      res = await fetch(`${baseUrl}/summary?geo=${activeLocation}`);
-    } else {
-      res = await fetch(`${baseUrl}/summary?loc=${activeLocation}`);
-    }
+  const getVersion = async () => {
+    const res = await fetch(`${baseUrl}/version`);
+    const data = await res.json();
+    setlastUpdated(data.version);
+  };
+
+  const getSummaryData = async (location) => {
+    setSummaryData({});
+    let res = await fetch(`${baseUrl}/summary?loc=${activeLocation}`);
     let resData = await res.json();
-    //console.log(resData);
-    let summaryData = resData.data[0];
-    //console.log(summaryData);
+    let summaryData = resData.summary[0];
     let formattedData = {};
     Object.keys(summaryData).map(
       (key) => (formattedData[key] = summaryData[key].toLocaleString())
     );
-    //console.log(formattedData);
     setSummaryData(formattedData);
   };
 
-  useEffect(() => {
-    getSummaryData();
-    getVersion();
-  }, [activeLocation]);
+  const getTimeseriesData = async (location) => {
+    const res = await fetch(
+      `${baseUrl}/timeseries?loc=${activeLocation}&ymd=true`
+    );
+    const data = await res.json();
+    setTimeseriesData({ datasets: timeseriesDataMap(data) });
+  };
+
+  function timeseriesDataMap(fetchedData) {
+    let tsKeyMap = [
+      {
+        datasetLabel: "active",
+        dataKey: "active_cases",
+        dateKey: "date_active",
+        borderColor: "red",
+      },
+      {
+        datasetLabel: "mortality",
+        dataKey: "deaths",
+        dateKey: "date_death_report",
+        borderColor: "grey",
+      },
+      {
+        datasetLabel: "recovered",
+        dataKey: "recovered",
+        dateKey: "date_recovered",
+        borderColor: "blue",
+      },
+    ];
+
+    let datasets = [];
+    tsKeyMap.forEach((dataSeries) => {
+      let dataset = {
+        label: dataSeries.datasetLabel,
+        borderColor: dataSeries.borderColor,
+        data: fetchedData[dataSeries.datasetLabel].map((dataPoint) => {
+          return {
+            y: dataPoint[dataSeries.dataKey],
+            x: dataPoint[dataSeries.dateKey],
+          };
+        }),
+      };
+      datasets.push(dataset);
+    });
+    return datasets;
+  }
 
 
   return (
     <div className="App">
-      <h1>COVID 19 - Dashboard</h1>
+      <h1>COVID 19 Dashboard</h1>
 
       <div className="dashboard-container">
-        <div className="dashboard-menu">
+        <div className="dashboard-menu ">
           <Select className="dashboard-select"
             options={locationList}
             onChange={(selectedOption) => setActiveLocation(selectedOption.value)}
             defaultValue={locationList.filter((options) => options.value == activeLocation)}
           />
-          <p className="update-date">
-            Last Updated : {lastUpdated}
-          </p>
+          <p className="update-date">Last Updated : {lastUpdated}</p>
         </div>
 
         <div className="dashboard-timeseries">
-
+          <Line className="line-chart"
+            data={timeseriesData}
+            options={timeseriesOptions}
+          />
         </div>
 
         <div className="dashboard-summary">
-          <Card title="Total Cases" value={summaryData.cases} />
-          <Card title="Total Recovered" value={summaryData.recovered} />
-          <Card title="Total Deaths" value={summaryData.deaths} />
-          <Card title="Total Vaccinated" value={summaryData.vaccine_administration_total_doses} />
+          <Card title="Total Cases" value={summaryData.cumulative_cases} />
+          <Card title="Total Recovered" value={summaryData.cumulative_recovered}
+          />
+          <Card title="Total Deaths" value={summaryData.cumulative_deaths} />
+          <Card title="Total Vaccinated" value={summaryData.cumulative_avaccine} />
         </div>
       </div>
     </div>
