@@ -1,6 +1,7 @@
 import "./App.css"
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
+import Card from "./SummaryCard";
 
 
 function App() {
@@ -23,8 +24,9 @@ function App() {
 
   const [activeLocation, setActiveLocation] = useState("can");
   const [lastUpdated, setLastUpdated] = useState("");
+  const [summaryData, setSummaryData] = useState({});
 
-  
+
   const baseUrl = "https://api.opencovid.ca";
   const getVersion = async () => {
     const res = await fetch(`${baseUrl}/version`);
@@ -33,6 +35,32 @@ function App() {
   };
 
   useEffect(() => {
+    getVersion();
+  }, [activeLocation]);
+
+
+  const getSummaryData = async () => {
+    //setSummaryData({});
+    let res;
+    if (activeLocation === "can") {
+      res = await fetch(`${baseUrl}/summary?geo=${activeLocation}`);
+    } else {
+      res = await fetch(`${baseUrl}/summary?loc=${activeLocation}`);
+    }
+    let resData = await res.json();
+    //console.log(resData);
+    let summaryData = resData.data[0];
+    //console.log(summaryData);
+    let formattedData = {};
+    Object.keys(summaryData).map(
+      (key) => (formattedData[key] = summaryData[key].toLocaleString())
+    );
+    //console.log(formattedData);
+    setSummaryData(formattedData);
+  };
+
+  useEffect(() => {
+    getSummaryData();
     getVersion();
   }, [activeLocation]);
 
@@ -58,7 +86,10 @@ function App() {
         </div>
 
         <div className="dashboard-summary">
-
+          <Card title="Total Cases" value={summaryData.cases} />
+          <Card title="Total Recovered" value={summaryData.recovered} />
+          <Card title="Total Deaths" value={summaryData.deaths} />
+          <Card title="Total Vaccinated" value={summaryData.vaccine_administration_total_doses} />
         </div>
       </div>
     </div>
