@@ -6,6 +6,7 @@ import { Line } from "react-chartjs-2";
 import Chart from "chart.js/auto";
 
 
+
 function App() {
   const locationList = [
     { value: "AB", label: "Alberta" },
@@ -59,17 +60,20 @@ function App() {
     setlastUpdated(data.version);
   };
 
-  const getSummaryData = async (location) => {
+  const getSummaryData = async () => {
     setSummaryData({});
     let res = await fetch(`${baseUrl}/summary?loc=${activeLocation}`);
     let resData = await res.json();
-    let summaryData = resData.summary[0];
-    let formattedData = {};
-    Object.keys(summaryData).map(
-      (key) => (formattedData[key] = summaryData[key].toLocaleString())
-    );
-    setSummaryData(formattedData);
+    if (resData.summary && resData.summary.length > 0) {
+      let summaryData = resData.summary[0];
+      let formattedData = {};
+      Object.keys(summaryData).map(
+        (key) => (formattedData[key] = summaryData[key].toLocaleString())
+      );
+      setSummaryData(formattedData);
+    }
   };
+
 
   const getTimeseriesData = async (location) => {
     const res = await fetch(
@@ -103,17 +107,19 @@ function App() {
 
     let datasets = [];
     tsKeyMap.forEach((dataSeries) => {
-      let dataset = {
-        label: dataSeries.datasetLabel,
-        borderColor: dataSeries.borderColor,
-        data: fetchedData[dataSeries.datasetLabel].map((dataPoint) => {
-          return {
-            y: dataPoint[dataSeries.dataKey],
-            x: dataPoint[dataSeries.dateKey],
-          };
-        }),
-      };
-      datasets.push(dataset);
+      if (fetchedData[dataSeries.datasetLabel]) {
+        let dataset = {
+          label: dataSeries.datasetLabel,
+          borderColor: dataSeries.borderColor,
+          data: fetchedData[dataSeries.datasetLabel].map((dataPoint) => {
+            return {
+              y: dataPoint[dataSeries.dataKey],
+              x: dataPoint[dataSeries.dateKey],
+            };
+          }),
+        };
+        datasets.push(dataset);
+      }
     });
     return datasets;
   }
