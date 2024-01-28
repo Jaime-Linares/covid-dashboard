@@ -1,5 +1,5 @@
 import "./App.css"
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Select from "react-select";
 
 
@@ -21,12 +21,36 @@ function App() {
     { value: "YT", label: "Yukon" },
   ];
 
+  const [activeLocation, setActiveLocation] = useState("can");
+  const [lastUpdated, setLastUpdated] = useState("");
+
+  
+  const baseUrl = "https://api.opencovid.ca";
+  const getVersion = async () => {
+    const res = await fetch(`${baseUrl}/version`);
+    const data = await res.json();
+    setLastUpdated(data.summary);
+  };
+
+  useEffect(() => {
+    getVersion();
+  }, [activeLocation]);
+
+
   return (
     <div className="App">
       <h1>COVID 19 - Dashboard</h1>
+
       <div className="dashboard-container">
         <div className="dashboard-menu">
-          <Select className="dashboard-select" options={locationList} />
+          <Select className="dashboard-select"
+            options={locationList}
+            onChange={(selectedOption) => setActiveLocation(selectedOption.value)}
+            defaultValue={locationList.filter((options) => options.value == activeLocation)}
+          />
+          <p className="update-date">
+            Last Updated : {lastUpdated}
+          </p>
         </div>
 
         <div className="dashboard-timeseries">
