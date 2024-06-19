@@ -23,7 +23,6 @@ h1 {
   grid-gap: 10px;
   margin: auto;
 }
-
 .dashboard-container > * {
   text-align: center;
   border-radius: 5px;
@@ -35,20 +34,16 @@ h1 {
   justify-content: space-between;
   padding-top: 1em;
 }
-
 .dashboard-loading {
   size: 2em;
 }
-
 .dashboard-menu > .dashboard-select {
   width: 30%;
   margin-left: 1rem;
 }
-
 .dashboard-menu > .update-date {
   margin-right: 1rem;
 }
-
 .line-chart {
   height: 80%;
 }
@@ -58,35 +53,28 @@ h1 {
   flex-direction: row;
   justify-content: space-evenly;
 }
-
 .summary-card {
   flex: 1 0 calc(25% - 10px);
   margin: 5px;
   color: white;
 }
-
 .summary-card h2 {
   font-size: 2em;
   padding-top: 5%;
   animation: fade 2s linear;
 }
-
 .summary-card p {
   font-size: calc(100% + 1.2vw);
 }
-
 .summary-card:nth-child(1) {
   background-color: #8e2e46;
 }
-
 .summary-card:nth-child(2) {
   background-color: #1f5673;
 }
-
 .summary-card:nth-child(3) {
   background-color: #687987;
 }
-
 .summary-card:nth-child(4) {
   background-color: #2a8479;
 }
